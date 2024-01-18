@@ -2,11 +2,11 @@ package com.myorg;
 
 import software.amazon.awscdk.App;
 
-public final class JbsCdkApp {
+public final class JbsDemoApp {
     public static void main(final String[] args) {
         App app = new App();
 
-        new JbsCdkStack(app, "JbsCdkStack");
+        new JbsDemoStack(app, "JbsDemoStack");
 
         app.synth();
     }
