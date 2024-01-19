@@ -46,6 +46,7 @@ public class JbsDemoStack extends Stack {
         Secret dbPassword = Secret.fromSecretsManager(databaseInstance.getSecret(), "password");
         Secret dbUserName = Secret.fromSecretsManager(databaseInstance.getSecret(), "username");
         ISecret gitAppSecrets = software.amazon.awscdk.services.secretsmanager.Secret.fromSecretNameV2(this, "github-secret", "prod/github-app");
+        ISecret adminPasswordSecrets = software.amazon.awscdk.services.secretsmanager.Secret.fromSecretNameV2(this, "admin-secret", "prod/admin-password");
         var app = ApplicationLoadBalancedFargateService.Builder.create(this, "jbs-demo-app")
                 .serviceName("jbs-demo-console")
                 .loadBalancerName("jbs-demo-console")
@@ -53,7 +54,7 @@ public class JbsDemoStack extends Stack {
                 .taskImageOptions(ApplicationLoadBalancedTaskImageOptions.builder()
                         .containerName("jbs-demo-console")
                         .containerPort(80)
-                        .image(ContainerImage.fromRegistry("quay.io/sdouglas/jbs-management-console:dev"))
+                        .image(ContainerImage.fromRegistry("quay.io/sdouglas/jbs-management-console@sha256:27c0396875461a808726567292f6f0290d293b49cfeb377ddbc256093053df6e"))
                         .environment(Map.of(
                                 "QUARKUS_HTTP_PORT", "80",
                                 "QUARKUS_DATASOURCE_DB_KIND", "postgresql",
@@ -66,7 +67,8 @@ public class JbsDemoStack extends Stack {
                                 "QUARKUS_GITHUB_APP_APP_NAME", Secret.fromSecretsManager(gitAppSecrets, "QUARKUS_GITHUB_APP_APP_NAME"),
                                 "QUARKUS_GITHUB_APP_WEBHOOK_PROXY_URL", Secret.fromSecretsManager(gitAppSecrets, "QUARKUS_GITHUB_APP_WEBHOOK_PROXY_URL"),
                                 "QUARKUS_GITHUB_APP_WEBHOOK_SECRET", Secret.fromSecretsManager(gitAppSecrets, "QUARKUS_GITHUB_APP_WEBHOOK_SECRET"),
-                                "QUARKUS_GITHUB_APP_PRIVATE_KEY", Secret.fromSecretsManager(gitAppSecrets, "QUARKUS_GITHUB_APP_PRIVATE_KEY")))
+                                "QUARKUS_GITHUB_APP_PRIVATE_KEY", Secret.fromSecretsManager(gitAppSecrets, "QUARKUS_GITHUB_APP_PRIVATE_KEY"),
+                                "JBS_ADMIN_PASSWORD", Secret.fromSecretsManager(adminPasswordSecrets, "JBS_ADMIN_PASSWORD")))
                         .build())
                 .vpc(vpc)
                 .publicLoadBalancer(true)
