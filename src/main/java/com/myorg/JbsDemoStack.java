@@ -2,6 +2,7 @@ package com.myorg;
 
 import software.amazon.awscdk.Stack;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awscdk.services.certificatemanager.Certificate;
 import software.amazon.awscdk.services.ec2.InstanceClass;
 import software.amazon.awscdk.services.ec2.InstanceSize;
 import software.amazon.awscdk.services.ec2.InstanceType;
@@ -12,6 +13,7 @@ import software.amazon.awscdk.services.ecs.Secret;
 import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedFargateService;
 import software.amazon.awscdk.services.ecs.patterns.ApplicationLoadBalancedTaskImageOptions;
 import software.amazon.awscdk.services.elasticloadbalancingv2.ApplicationProtocol;
+import software.amazon.awscdk.services.elasticloadbalancingv2.SslPolicy;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.amazon.awscdk.services.iam.PolicyDocument;
 import software.amazon.awscdk.services.iam.PolicyStatement;
@@ -21,6 +23,9 @@ import software.amazon.awscdk.services.rds.DatabaseInstance;
 import software.amazon.awscdk.services.rds.DatabaseInstanceEngine;
 import software.amazon.awscdk.services.rds.PostgresEngineVersion;
 import software.amazon.awscdk.services.rds.PostgresInstanceEngineProps;
+import software.amazon.awscdk.services.route53.HostedZone;
+import software.amazon.awscdk.services.route53.HostedZoneAttributes;
+import software.amazon.awscdk.services.route53.HostedZoneProviderProps;
 import software.amazon.awscdk.services.secretsmanager.ISecret;
 import software.constructs.Construct;
 
@@ -28,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 
 public class JbsDemoStack extends Stack {
-    public static final String IMAGE_SHA = "e6374e5f1ea1d954a4d4bdec8324eb5d5f980203aacf803f7efd5385aebfd702";
+    public static final String IMAGE_SHA = "4262da94151c3a23ea2bfeaf2bd51c3c61517a46d65100bf1fc48d29ce69a3e9";
 
     public JbsDemoStack(final Construct parent, final String id) {
         this(parent, id, null);
@@ -44,9 +49,9 @@ public class JbsDemoStack extends Stack {
                 .build();
 
         // Create a PostgreSQL database instance
-        DatabaseInstance databaseInstance = DatabaseInstance.Builder.create(this, "jbs-demo-db")
+        DatabaseInstance databaseInstance = DatabaseInstance.Builder.create(this, "jbs-demo-db-1")
                 .engine(DatabaseInstanceEngine.postgres(PostgresInstanceEngineProps.builder().version(PostgresEngineVersion.VER_16).build()))
-                .instanceIdentifier("jbs-demo")
+                .instanceIdentifier("jbs-demo-1")
                 .instanceType(InstanceType.of(InstanceClass.T4G, InstanceSize.MICRO))
                 .databaseName("jbs")
                 .vpc(vpc)
@@ -64,6 +69,10 @@ public class JbsDemoStack extends Stack {
         var app = ApplicationLoadBalancedFargateService.Builder.create(this, "jbs-demo-app")
                 .serviceName("jbs-demo-console")
                 .loadBalancerName("jbs-demo-console")
+                .domainZone(HostedZone.fromHostedZoneAttributes(this, "hosted-zone", HostedZoneAttributes.builder().hostedZoneId("Z0388378SXFJGBYV7M77").zoneName("jvmshield.dev").build()))
+                .domainName("jvmshield.dev")
+                .sslPolicy(SslPolicy.TLS11)
+                .certificate(Certificate.fromCertificateArn(this, "ssl-cert", "arn:aws:acm:us-east-1:154987583424:certificate/6008a7a7-e16d-4a82-a7cf-e89d19947878"))
                 .desiredCount(1)
                 .memoryLimitMiB(2048)
                 .cpu(1024)
